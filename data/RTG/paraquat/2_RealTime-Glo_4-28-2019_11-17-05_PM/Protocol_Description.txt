@@ -1,0 +1,3 @@
+Protocol Description
+Result File name, \Thumb Drive\Promega\Data\CSV\2_RealTime-Glo_4-28-2019_11-17-05 PM.csv
+Total steps, 0
