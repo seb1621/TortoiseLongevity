@@ -1,0 +1,227 @@
+---
+title: "Paraquat Response Curves"
+subtitle: "homAre, gopAga, geoPla, cheNig"
+author: "Stephanie E Bulls"
+date: "2018-05-29"
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Libraries
+```{r Libraries}
+# Actively bound
+library(tidyverse)
+options(readr.num_columns = 0)
+library(magrittr)
+library(ggpubr)
+library(reshape2)
+library(RColorBrewer)
+```
+
+## Functions for Data Analysis:
+
+```{r Functions}
+source("../code/general_functions.R")
+```
+
+
+## Parameters:
+```{r Parameters:}
+treatments= c(0,100,500,1000,2500,5000)
+treatment.list = rep(treatments,times=2)
+control.list = as.character(rep(0, 12))
+lookup.treatment = list(
+  "A"= treatment.list,
+  "B"= treatment.list,
+  "C"= treatment.list,
+  "D"= treatment.list,
+  "E"= treatment.list,
+  "F"= treatment.list,
+  "G"= treatment.list,
+  "H"= treatment.list
+)
+
+lookup.treatment.control = list(
+  "A"= control.list,
+  "B"= control.list,
+  "C"= control.list,
+  "D"= control.list,
+  "E"= control.list,
+  "F"= control.list,
+  "G"= control.list,
+  "H"= control.list
+  )
+
+lookup.cellline <- list(
+  "HA_GA_GP_CN" = list(
+    "A"= rep(c("homAre","geoPla"), each=6),
+    "B"=rep(c("homAre","geoPla"), each=6),
+    "C"= rep(c("homAre","geoPla"), each=6),
+    "D"=rep(c("homAre","geoPla"), each=6),
+    "E"=rep(c("gopAga","cheNig"), each=6),
+    "F"= rep(c("gopAga","cheNig"), each=6),
+    "G"= rep(c("gopAga","cheNig"), each=6),
+    "H"= rep(c("gopAga","cheNig"), each=6)
+  )
+)
+lookup.passage <- list(
+  "HA_GA_GP_CN" = list(
+    "A"= rep(c(10, 9), each = 6),
+    "B"= rep(c(10, 9), each = 6),
+    "C"= rep(c(10, 9), each = 6),
+    "D"= rep(c(10, 9), each = 6),
+    "E"= rep(10, 10),
+    "F"= rep(10, 10),
+    "G"= rep(10, 10),
+    "H"= rep(10, 10)
+  )
+)
+
+```
+
+## Data Loading:
+```{r Directory Hopping}
+tort.pqt.time <- dir(
+  path="../data/ATG/paraquat", 
+  full.names = T,
+  pattern = "(6|12|24|48|72)h"
+) %>% 
+  set_names(.,basename(.))
+
+tort.pqt.time.plates <- tort.pqt.time %>% 
+  lapply(
+    .,
+    function(x){
+      x %>% 
+        dir(path=., full.names = T) %>%
+        setNames(., basename(.))
+    })
+
+tort.pqt.files <- tort.pqt.time.plates %>% 
+  lapply(
+    .,
+    function(time){
+      time %>% 
+        lapply(
+          .,
+          function(plate){
+            plate %>% 
+              list.files(path=., pattern="Step[126].*.csv", full.names=T)
+          }
+        )
+    })
+
+tort.pqt.df <- suppressWarnings(
+  tort.pqt.files %>% 
+  lapply(
+    names(.),
+    function(time, btf){
+      lapply(
+        names(btf[[time]]),
+        function(plate, t, files){
+          a = list(
+            Viability=read_csv(files[[plate]][[1]],col_names = TRUE),
+            Cytotoxicity=read_csv(files[[plate]][[2]],col_names = TRUE),
+            Apoptosis=read_csv(files[[plate]][[3]],col_names = TRUE)
+          ) 
+          lapply(
+              names(a),
+              function(test, df, timepoint, p){
+                df[[test]] %>%
+                  reshape_96_wellplate(., value_name = "Value", Time=timepoint, Test = test, Drug="paraquat") %>%
+                  assign_attr_by_well(., cell_line = lookup.cellline[[plate]], passage = lookup.passage[[plate]], Treatment = lookup.treatment, Vehicle = lookup.treatment.control) %>%
+                  normalize_by_vehicle() %>%
+                  arrange(cell_line, Treatment)
+              },
+              df = a,
+              timepoint = t,
+              p = plate
+            ) %>%
+            bind_rows()
+          },
+          t=time,
+          files=btf[[time]]
+        ) %>% bind_rows()
+    },
+    btf = .
+  ) %>% bind_rows
+ ) %>% 
+  mutate(
+    Treatment = factor(Treatment, levels=treatments),
+    individual = cell_line,
+    cell_line = gsub('[[:digit:]]+', '', cell_line)
+    )
+
+tort.pqt.df %>% pull(cell_line) %>% unique
+
+
+tort.pqt.full <- tort.pqt.df
+
+# Mistakes were made with these wells, removing them from the analysis
+tort.pqt.full[which(tort.pqt.full$Row %in% c("A", "B", "C", "D") & tort.pqt.full$Col == 8 & tort.pqt.full$Test %in% c("Viability", "Cytotoxicity")), c("Value", "Value.Norm")] <- NA
+tort.pqt.full[which(tort.pqt.full$Col %in% c(11,12) & tort.pqt.full$Test %in% c("Viability", "Cytotoxicity")), c("Value", "Value.Norm")] <- NA
+#tort.pqt.full
+```
+```{r Write final results}
+dir.create("../output/paraquat", showWarnings = F)
+tort.pqt.full %>% write_tsv(.,"../output/paraquat/tort.ATG.paraquat.tsv")
+```
+
+## Plot
+```{r, fig.align="center", message=F, warning=F, error=F}
+species <- tort.pqt.full %>% pull(cell_line) %>% unique
+species.passage <- tort.pqt.full %>% unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% pull(sample) %>% unique
+individual <- tort.pqt.df %>% pull(individual) %>% unique
+individual.passage <- tort.pqt.df %>% unite("sample", c("individual", "passage"), sep=", P", remove = F) %>% pull(sample) %>% unique
+
+species.colorScheme <- brewer.pal(length(species), "Dark2")
+#species.colorScheme
+species.colorScheme <- set_names(species.colorScheme, species)
+
+species.passage.colorScheme <- colorRampPalette(species.colorScheme)(length(species.passage))
+species.passage.colorScheme <- set_names(species.passage.colorScheme, species.passage)
+
+individual.colorScheme <- colorRampPalette(species.colorScheme)(length(individual)) %>% 
+  set_names(., individual)
+individual.passage.colorScheme <- colorRampPalette(species.colorScheme)(length(individual.passage)) %>% 
+  set_names(., individual.passage)
+```
+
+
+```{r, fig.align="center", message=F, warning=F, error=F}
+fig6a <- tort.pqt.full %>%
+  filter(Treatment!="N1000") %>% 
+  #unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+  plot_ATG_curves(colorscheme = species.colorScheme) %>% 
+  make_pretty_graph()+
+  labs(
+    title = "Tortoise ApoTox-Glo Paraquat Tx: 72 hours"
+  )
+fig6a + scale_x_log10()
+```
+
+```{r, eval=FALSE}
+cheNig.pqt%>%
+  filter(
+    Time == "48h",
+    cell_line == "cheNig"
+    ) %>%
+  mutate(cell_line = individual)
+
+cheNig.paraquat <- tort.pqt.df %>%
+  filter(
+    Time == "48h",
+    cell_line == "cheNig"
+    ) %>%
+  mutate(sample = individual) %>% 
+  plot_ATG_curves(colorscheme = individual.colorScheme)
+cheNig.paraquat
+```
+
+
+```{r}
+plotly::ggplotly(fig6a)
+```
+
