@@ -9,3 +9,10 @@ editor_options:
 ---
 
 Welcome to my research website.
+
+```{r table of contents, echo=FALSE, results='asis', message=FALSE}
+require(workflowr, quietly = T)
+require(magrittr, quietly = T)
+wflow_toc(ignore_nav_bar = T) %>% cat(sep = "\n")
+```
+
