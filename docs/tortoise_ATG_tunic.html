@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Stephanie E Bulls" />
+
+<meta name="date" content="2019-05-29" />
+
+<title>Tunicamycin Response Curves</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.3/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.9.0/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-1.46.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-1.46.1/plotly-latest.min.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">TortoiseLongevity</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/seb1621/TortoiseLongevity">
+    <span class="fa fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Tunicamycin Response Curves</h1>
+<h3 class="subtitle">homAre, gopAga, geoPla, cheNig"</h3>
+<h4 class="author">Stephanie E Bulls</h4>
+<h4 class="date">2019-05-29</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2019-05-30
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>TortoiseLongevity/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.3.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20190515code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20190515)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20190515code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20190515)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomseb1621TortoiseLongevitytree924068eea1b0c9bb660194695a029977d56da103targetblank924068ea"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/seb1621/TortoiseLongevity/tree/924068eea1b0c9bb660194695a029977d56da103" target="_blank">924068e</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomseb1621TortoiseLongevitytree924068eea1b0c9bb660194695a029977d56da103targetblank924068ea" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .RData
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.Rhistory
+    Ignored:    analysis/figure/
+
+Untracked files:
+    Untracked:  analysis/tortoise_ATG_per.Rmd
+    Untracked:  analysis/tortoise_etoposide.Rmd
+    Untracked:  analysis/tortoise_paraquat.Rmd
+    Untracked:  analysis/tortoise_peroxide.Rmd
+    Untracked:  analysis/tortoise_tunicamycin.Rmd
+    Untracked:  analysis/tortoise_tunicamycin.docx
+    Untracked:  analysis/tortoise_tunicamycin_files/
+    Untracked:  code/bats-ATG-paraquat.Rmd
+    Untracked:  code/general_functions.R
+    Untracked:  data/ATG/
+    Untracked:  docs/figure/turtles_tunicamycin.Rmd/
+    Untracked:  output/paraquat/
+    Untracked:  output/peroxide/
+    Untracked:  output/tortoise_etop_RTG.csv
+    Untracked:  output/tortoise_paraq_RTG.csv
+    Untracked:  output/tortoise_perox_RTG.csv
+    Untracked:  output/tortoise_tunic_RTG.csv
+    Untracked:  output/tunicamycin/
+    Untracked:  tort_ATG_per.jpeg
+    Untracked:  tort_RTG_per6.jpeg
+    Untracked:  writeup_stress_response.Rmd
+
+Unstaged changes:
+    Modified:   _workflowr.yml
+    Deleted:    analysis/turtles_etoposide.Rmd
+    Deleted:    analysis/turtles_paraquat.Rmd
+    Deleted:    analysis/turtles_peroxide.Rmd
+    Deleted:    analysis/turtles_tunicamycin.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the R Markdown and HTML files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view them.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/seb1621/TortoiseLongevity/blob/924068eea1b0c9bb660194695a029977d56da103/analysis/tortoise_ATG_tunic.Rmd" target="_blank">924068e</a>
+</td>
+<td>
+Stephanie Bulls
+</td>
+<td>
+2019-05-30
+</td>
+<td>
+Analysis runs from start to finish
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="libraries" class="section level2">
+<h2>Libraries</h2>
+<pre class="r"><code># Actively bound
+library(tidyverse)</code></pre>
+<pre><code>Warning: package &#39;tidyverse&#39; was built under R version 3.5.3</code></pre>
+<pre><code>-- Attaching packages ----------------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --</code></pre>
+<pre><code>v ggplot2 3.1.1       v purrr   0.3.2  
+v tibble  2.1.1       v dplyr   0.8.0.1
+v tidyr   0.8.3       v stringr 1.4.0  
+v readr   1.3.1       v forcats 0.4.0  </code></pre>
+<pre><code>Warning: package &#39;ggplot2&#39; was built under R version 3.5.3</code></pre>
+<pre><code>Warning: package &#39;tibble&#39; was built under R version 3.5.3</code></pre>
+<pre><code>Warning: package &#39;tidyr&#39; was built under R version 3.5.3</code></pre>
+<pre><code>Warning: package &#39;readr&#39; was built under R version 3.5.3</code></pre>
+<pre><code>Warning: package &#39;purrr&#39; was built under R version 3.5.3</code></pre>
+<pre><code>Warning: package &#39;dplyr&#39; was built under R version 3.5.3</code></pre>
+<pre><code>Warning: package &#39;stringr&#39; was built under R version 3.5.3</code></pre>
+<pre><code>Warning: package &#39;forcats&#39; was built under R version 3.5.3</code></pre>
+<pre><code>-- Conflicts -------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>options(readr.num_columns = 0)
+library(magrittr)</code></pre>
+<pre><code>Warning: package &#39;magrittr&#39; was built under R version 3.5.3</code></pre>
+<pre><code>
+Attaching package: &#39;magrittr&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:purrr&#39;:
+
+    set_names</code></pre>
+<pre><code>The following object is masked from &#39;package:tidyr&#39;:
+
+    extract</code></pre>
+<pre class="r"><code>library(ggpubr)</code></pre>
+<pre><code>Warning: package &#39;ggpubr&#39; was built under R version 3.5.3</code></pre>
+<pre class="r"><code>library(reshape2)</code></pre>
+<pre><code>Warning: package &#39;reshape2&#39; was built under R version 3.5.3</code></pre>
+<pre><code>
+Attaching package: &#39;reshape2&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:tidyr&#39;:
+
+    smiths</code></pre>
+<pre class="r"><code>library(RColorBrewer)</code></pre>
+</div>
+<div id="functions-for-data-analysis" class="section level2">
+<h2>Functions for Data Analysis:</h2>
+<pre class="r"><code>source(&quot;../code/general_functions.R&quot;)</code></pre>
+</div>
+<div id="parameters" class="section level2">
+<h2>Parameters:</h2>
+<pre class="r"><code>treatments= c(0,5,25,50,75,100)
+treatment.list = rep(treatments,times=2)
+control.list = as.character(rep(0, 12))
+lookup.treatment = list(
+  &quot;A&quot;= treatment.list,
+  &quot;B&quot;= treatment.list,
+  &quot;C&quot;= treatment.list,
+  &quot;D&quot;= treatment.list,
+  &quot;E&quot;= treatment.list,
+  &quot;F&quot;= treatment.list,
+  &quot;G&quot;= treatment.list,
+  &quot;H&quot;= treatment.list
+)
+
+lookup.treatment.control = list(
+  &quot;A&quot;= control.list,
+  &quot;B&quot;= control.list,
+  &quot;C&quot;= control.list,
+  &quot;D&quot;= control.list,
+  &quot;E&quot;= control.list,
+  &quot;F&quot;= control.list,
+  &quot;G&quot;= control.list,
+  &quot;H&quot;= control.list
+  )
+
+lookup.cellline &lt;- list(
+  &quot;HA_GA_GP_CN&quot; = list(
+    &quot;A&quot;= rep(c(&quot;homAre&quot;,&quot;geoPla&quot;), each=6),
+    &quot;B&quot;=rep(c(&quot;homAre&quot;,&quot;geoPla&quot;), each=6),
+    &quot;C&quot;= rep(c(&quot;homAre&quot;,&quot;geoPla&quot;), each=6),
+    &quot;D&quot;=rep(c(&quot;homAre&quot;,&quot;geoPla&quot;), each=6),
+    &quot;E&quot;=rep(c(&quot;gopAga&quot;,&quot;cheNig&quot;), each=6),
+    &quot;F&quot;= rep(c(&quot;gopAga&quot;,&quot;cheNig&quot;), each=6),
+    &quot;G&quot;= rep(c(&quot;gopAga&quot;,&quot;cheNig&quot;), each=6),
+    &quot;H&quot;= rep(c(&quot;gopAga&quot;,&quot;cheNig&quot;), each=6)
+  )
+)
+lookup.passage &lt;- list(
+  &quot;HA_GA_GP_CN&quot; = list(
+    &quot;A&quot;= rep(c(11, 10), each = 6),
+    &quot;B&quot;= rep(c(11, 10), each = 6),
+    &quot;C&quot;= rep(c(11, 10), each = 6),
+    &quot;D&quot;= rep(c(11, 10), each = 6),
+    &quot;E&quot;= rep(11, 12),
+    &quot;F&quot;= rep(11, 12),
+    &quot;G&quot;= rep(11, 12),
+    &quot;H&quot;= rep(11, 12)
+  )
+)</code></pre>
+</div>
+<div id="data-loading" class="section level2">
+<h2>Data Loading:</h2>
+<pre class="r"><code>tort.tunic.time &lt;- dir(
+  path=&quot;../data/ATG/tunicamycin&quot;, 
+  full.names = T,
+  pattern = &quot;(6|12|24|48|72)h&quot;
+) %&gt;% 
+  set_names(.,basename(.))
+
+tort.tunic.time.plates &lt;- tort.tunic.time %&gt;% 
+  lapply(
+    .,
+    function(x){
+      x %&gt;% 
+        dir(path=., full.names = T) %&gt;%
+        setNames(., basename(.))
+    })
+
+tort.tunic.files &lt;- tort.tunic.time.plates %&gt;% 
+  lapply(
+    .,
+    function(time){
+      time %&gt;% 
+        lapply(
+          .,
+          function(plate){
+            plate %&gt;% 
+              list.files(path=., pattern=&quot;Step[126].*.csv&quot;, full.names=T)
+          }
+        )
+    })
+
+tort.tunic.df &lt;- suppressWarnings(
+  tort.tunic.files %&gt;% 
+  lapply(
+    names(.),
+    function(time, btf){
+      lapply(
+        names(btf[[time]]),
+        function(plate, t, files){
+          a = list(
+            Viability=read_csv(files[[plate]][[1]],col_names = TRUE),
+            Cytotoxicity=read_csv(files[[plate]][[2]],col_names = TRUE),
+            Apoptosis=read_csv(files[[plate]][[3]],col_names = TRUE)
+          ) 
+          lapply(
+              names(a),
+              function(test, df, timepoint, p){
+                df[[test]] %&gt;%
+                  reshape_96_wellplate(., value_name = &quot;Value&quot;, Time=timepoint, Test = test, Drug=&quot;tunicamycin&quot;) %&gt;%
+                  assign_attr_by_well(., cell_line = lookup.cellline[[plate]], passage = lookup.passage[[plate]], Treatment = lookup.treatment, Vehicle = lookup.treatment.control) %&gt;%
+                  normalize_by_vehicle() %&gt;%
+                  arrange(cell_line, Treatment)
+              },
+              df = a,
+              timepoint = t,
+              p = plate
+            ) %&gt;%
+            bind_rows()
+          },
+          t=time,
+          files=btf[[time]]
+        ) %&gt;% bind_rows()
+    },
+    btf = .
+  ) %&gt;% bind_rows
+ ) %&gt;% 
+  mutate(
+    Treatment = factor(Treatment, levels=treatments),
+    individual = cell_line,
+    cell_line = gsub(&#39;[[:digit:]]+&#39;, &#39;&#39;, cell_line)
+    )</code></pre>
+<pre><code>
+Attaching package: &#39;rlang&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:magrittr&#39;:
+
+    set_names</code></pre>
+<pre><code>The following objects are masked from &#39;package:purrr&#39;:
+
+    %@%, as_function, flatten, flatten_chr, flatten_dbl,
+    flatten_int, flatten_lgl, flatten_raw, invoke, list_along,
+    modify, prepend, splice</code></pre>
+<pre class="r"><code>tort.tunic.df %&gt;% pull(cell_line) %&gt;% unique</code></pre>
+<pre><code>[1] &quot;cheNig&quot; &quot;geoPla&quot; &quot;gopAga&quot; &quot;homAre&quot;</code></pre>
+<pre class="r"><code>tort.tunic.full &lt;- tort.tunic.df
+#tort.tunic.full</code></pre>
+<pre class="r"><code>dir.create(&quot;../output/tunicamycin&quot;, showWarnings = F)
+tort.tunic.full %&gt;% write_tsv(.,&quot;../output/tunicamycin/tort.ATG.tunicamycin.tsv&quot;)</code></pre>
+</div>
+<div id="plot" class="section level2">
+<h2>Plot</h2>
+<pre class="r"><code>species &lt;- tort.tunic.full %&gt;% pull(cell_line) %&gt;% unique
+species.passage &lt;- tort.tunic.full %&gt;% unite(&quot;sample&quot;, c(&quot;cell_line&quot;, &quot;passage&quot;), sep=&quot;, P&quot;, remove = F) %&gt;% pull(sample) %&gt;% unique
+individual &lt;- tort.tunic.df %&gt;% pull(individual) %&gt;% unique
+individual.passage &lt;- tort.tunic.df %&gt;% unite(&quot;sample&quot;, c(&quot;individual&quot;, &quot;passage&quot;), sep=&quot;, P&quot;, remove = F) %&gt;% pull(sample) %&gt;% unique
+
+species.colorScheme &lt;- brewer.pal(length(species), &quot;Dark2&quot;)
+#species.colorScheme
+species.colorScheme &lt;- set_names(species.colorScheme, species)
+
+species.passage.colorScheme &lt;- colorRampPalette(species.colorScheme)(length(species.passage))
+species.passage.colorScheme &lt;- set_names(species.passage.colorScheme, species.passage)
+
+individual.colorScheme &lt;- colorRampPalette(species.colorScheme)(length(individual)) %&gt;% 
+  set_names(., individual)
+individual.passage.colorScheme &lt;- colorRampPalette(species.colorScheme)(length(individual.passage)) %&gt;% 
+  set_names(., individual.passage)</code></pre>
+<pre class="r"><code>fig6a &lt;- tort.tunic.full %&gt;%
+  #unite(&quot;sample&quot;, c(&quot;cell_line&quot;, &quot;passage&quot;), sep=&quot;, P&quot;, remove = F) %&gt;% 
+  mutate(sample=cell_line, Treatment=as.character(Treatment) %&gt;% as.numeric) %&gt;% 
+  plot_ATG_curves(colorscheme = species.colorScheme) %&gt;% 
+  make_pretty_graph()+
+  labs(
+    title = &quot;Tortoise ApoTox-Glo Tunicamycin Tx: 72 hours&quot;
+  )
+fig6a # + scale_x_log10()</code></pre>
+<p><img src="figure/tortoise_ATG_tunic.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plotly::ggplotly(fig6a)</code></pre>
+<div id="htmlwidget-53f69595525a2453b91d" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-53f69595525a2453b91d">{"x":{"data":[{"x":[-5,105],"y":[0,0],"text":"yintercept: 0","type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"dash"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-5,105],"y":[0,0],"text":"yintercept: 0","type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"dash"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[-5,105],"y":[0,0],"text":"yintercept: 0","type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"dash"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.00306802661943184,-0.108953408291064,-0.181574826928544,0.225916016222047,0.268500341167725,0.0200705941686361],"text":["Treatment:   0<br />Value.Norm: -3.068027e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm: -1.089534e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -1.815748e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm:  2.259160e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm:  2.685003e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm:  2.007059e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(27,158,119,1)","dash":"solid"},"hoveron":"points","name":"cheNig","legendgroup":"cheNig","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.00283244687305571,0.0235708965352969,-0.0496768656713739,0.319997906213981,0.435728659262095,0.367472269021181],"text":["Treatment:   0<br />Value.Norm: -2.832447e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm:  2.357090e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -4.967687e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm:  3.199979e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm:  4.357287e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm:  3.674723e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(27,158,119,1)","dash":"solid"},"hoveron":"points","name":"cheNig","legendgroup":"cheNig","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.00123147477928087,-0.249297801869576,-0.260455958621569,-0.423363118027602,-0.769862157218358,-0.930475131407123],"text":["Treatment:   0<br />Value.Norm: -1.231475e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm: -2.492978e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -2.604560e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm: -4.233631e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm: -7.698622e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm: -9.304751e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(27,158,119,1)","dash":"solid"},"hoveron":"points","name":"cheNig","legendgroup":"cheNig","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.00126418367405298,-0.052310523453983,-0.162572402138828,-0.0917942235239724,0.164867769212899,-0.00337814930112549],"text":["Treatment:   0<br />Value.Norm: -1.264184e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm: -5.231052e-02<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm: -1.625724e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm: -9.179422e-02<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm:  1.648678e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm: -3.378149e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(217,95,2,1)","dash":"solid"},"hoveron":"points","name":"geoPla","legendgroup":"geoPla","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.00322431367529401,0.449089600700842,0.266693171427704,0.318149360843664,0.374609836325848,0.310577854757422],"text":["Treatment:   0<br />Value.Norm: -3.224314e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm:  4.490896e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm:  2.666932e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm:  3.181494e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm:  3.746098e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm:  3.105779e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(217,95,2,1)","dash":"solid"},"hoveron":"points","name":"geoPla","legendgroup":"geoPla","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-4.18846555825792e-005,-0.232942342233166,-0.276533452855285,-0.344367409124571,-0.624950613310767,-0.828762008315061],"text":["Treatment:   0<br />Value.Norm: -4.188466e-05<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm: -2.329423e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm: -2.765335e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm: -3.443674e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm: -6.249506e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm: -8.287620e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(217,95,2,1)","dash":"solid"},"hoveron":"points","name":"geoPla","legendgroup":"geoPla","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.000992215940982664,-0.0132048631419269,0.0383087934354153,-0.126786955412473,-0.0816372723839105,-0.195391192042732],"text":["Treatment:   0<br />Value.Norm: -9.922159e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm: -1.320486e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm:  3.830879e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm: -1.267870e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm: -8.163727e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm: -1.953912e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(117,112,179,1)","dash":"solid"},"hoveron":"points","name":"gopAga","legendgroup":"gopAga","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.000448904325942867,0.0693905671246579,0.0376263031015366,0.148405955314734,0.384372257524101,0.369620767019642],"text":["Treatment:   0<br />Value.Norm: -4.489043e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm:  6.939057e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm:  3.762630e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm:  1.484060e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm:  3.843723e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm:  3.696208e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(117,112,179,1)","dash":"solid"},"hoveron":"points","name":"gopAga","legendgroup":"gopAga","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.000616440708961461,-0.140182406627136,-0.16601110620318,-0.192537623065428,-0.503526640562859,-0.723829433633782],"text":["Treatment:   0<br />Value.Norm: -6.164407e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm: -1.401824e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm: -1.660111e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm: -1.925376e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm: -5.035266e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm: -7.238294e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(117,112,179,1)","dash":"solid"},"hoveron":"points","name":"gopAga","legendgroup":"gopAga","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.00476871360302657,-0.0953898020565301,-0.0019468161350171,-0.00305016902332653,-0.238053061927668,-0.526236042361454],"text":["Treatment:   0<br />Value.Norm: -4.768714e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm: -9.538980e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm: -1.946816e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm: -3.050169e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm: -2.380531e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm: -5.262360e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(231,41,138,1)","dash":"solid"},"hoveron":"points","name":"homAre","legendgroup":"homAre","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.000226001010236191,0.0883994850397964,0.0465534669452564,0.234227966894314,0.412725988205408,0.401396358274604],"text":["Treatment:   0<br />Value.Norm: -2.260010e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm:  8.839949e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm:  4.655347e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm:  2.342280e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm:  4.127260e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm:  4.013964e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(231,41,138,1)","dash":"solid"},"hoveron":"points","name":"homAre","legendgroup":"homAre","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100],"y":[-0.000633688257788556,-0.173282033882038,-0.165978554793346,-0.312400446405212,-0.538289188148448,-0.592918000317187],"text":["Treatment:   0<br />Value.Norm: -6.336883e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm: -1.732820e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm: -1.659786e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm: -3.124004e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm: -5.382892e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm: -5.929180e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(231,41,138,1)","dash":"solid"},"hoveron":"points","name":"homAre","legendgroup":"homAre","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0326432240655357,-0.138073914577721,-0.201268460489792,0.221333832823969,0.254102696650189,-0.00851423622658937,0.0486554245638615,0.282897985685261,0.230498199620126,-0.161881193367295,-0.0798329020044063,0.0265071708266721,-0.0326432240655357],"text":["Treatment:   0<br />Value.Norm: -3.068027e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm: -1.089534e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -1.815748e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm:  2.259160e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm:  2.685003e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm:  2.007059e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm:  2.007059e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm:  2.685003e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm:  2.259160e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -1.815748e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm: -1.089534e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   0<br />Value.Norm: -3.068027e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   0<br />Value.Norm: -3.068027e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(27,158,119,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(27,158,119,0.2)","hoveron":"points","name":"cheNig","legendgroup":"cheNig","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0310161820865271,-0.0109792985294386,-0.0708791503498393,0.296630864869994,0.414593921171133,0.346179506702128,0.388765031340234,0.456863397353058,0.343364947557969,-0.0284745809929086,0.0581210916000324,0.0253512883404156,-0.0310161820865271],"text":["Treatment:   0<br />Value.Norm: -2.832447e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm:  2.357090e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -4.967687e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm:  3.199979e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm:  4.357287e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm:  3.674723e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm:  3.674723e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm:  4.357287e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm:  3.199979e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -4.967687e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm:  2.357090e-02<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   0<br />Value.Norm: -2.832447e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   0<br />Value.Norm: -2.832447e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(27,158,119,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(27,158,119,0.2)","hoveron":"points","name":"cheNig","legendgroup":"cheNig","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0202002161058525,-0.267202483526935,-0.285631455167768,-0.429832879939598,-0.781559702298757,-0.934875482709599,-0.926074780104647,-0.758164612137958,-0.416893356115607,-0.235280462075369,-0.231393120212217,0.0177372665472907,-0.0202002161058525],"text":["Treatment:   0<br />Value.Norm: -1.231475e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm: -2.492978e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -2.604560e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm: -4.233631e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm: -7.698622e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm: -9.304751e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment: 100<br />Value.Norm: -9.304751e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  75<br />Value.Norm: -7.698622e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  50<br />Value.Norm: -4.233631e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:  25<br />Value.Norm: -2.604560e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   5<br />Value.Norm: -2.492978e-01<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   0<br />Value.Norm: -1.231475e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig","Treatment:   0<br />Value.Norm: -1.231475e-03<br />sample: cheNig<br />sample: cheNig<br />sample: cheNig"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(27,158,119,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(27,158,119,0.2)","hoveron":"points","name":"cheNig","legendgroup":"cheNig","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0204188391617776,-0.0711388816298808,-0.197220660654115,-0.109632072072309,0.162325486157054,-0.00780747096428313,0.00105117236203215,0.167410052268745,-0.073956374975636,-0.127924143623542,-0.0334821652780851,0.0178904718136716,-0.0204188391617776],"text":["Treatment:   0<br />Value.Norm: -1.264184e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm: -5.231052e-02<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm: -1.625724e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm: -9.179422e-02<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm:  1.648678e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm: -3.378149e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm: -3.378149e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm:  1.648678e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm: -9.179422e-02<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm: -1.625724e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm: -5.231052e-02<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   0<br />Value.Norm: -1.264184e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   0<br />Value.Norm: -1.264184e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(217,95,2,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(217,95,2,0.2)","hoveron":"points","name":"geoPla","legendgroup":"geoPla","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0341102005350461,0.38818134647575,0.233454171719472,0.278358874232207,0.339665069414725,0.297769353638724,0.32338635587612,0.40955460323697,0.357939847455121,0.299932171135936,0.509997854925933,0.0276615731844581,-0.0341102005350461],"text":["Treatment:   0<br />Value.Norm: -3.224314e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm:  4.490896e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm:  2.666932e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm:  3.181494e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm:  3.746098e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm:  3.105779e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm:  3.105779e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm:  3.746098e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm:  3.181494e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm:  2.666932e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm:  4.490896e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   0<br />Value.Norm: -3.224314e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   0<br />Value.Norm: -3.224314e-03<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(217,95,2,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(217,95,2,0.2)","hoveron":"points","name":"geoPla","legendgroup":"geoPla","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.00352829152789115,-0.247360801030002,-0.315013309650953,-0.358627653775538,-0.632181323191086,-0.830080591553927,-0.827443425076195,-0.617719903430448,-0.330107164473604,-0.238053596059617,-0.21852388343633,0.00344452221672599,-0.00352829152789115],"text":["Treatment:   0<br />Value.Norm: -4.188466e-05<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm: -2.329423e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm: -2.765335e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm: -3.443674e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm: -6.249506e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm: -8.287620e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment: 100<br />Value.Norm: -8.287620e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  75<br />Value.Norm: -6.249506e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  50<br />Value.Norm: -3.443674e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:  25<br />Value.Norm: -2.765335e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   5<br />Value.Norm: -2.329423e-01<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   0<br />Value.Norm: -4.188466e-05<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla","Treatment:   0<br />Value.Norm: -4.188466e-05<br />sample: geoPla<br />sample: geoPla<br />sample: geoPla"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(217,95,2,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(217,95,2,0.2)","hoveron":"points","name":"geoPla","legendgroup":"geoPla","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0181143272537299,-0.0396021427275695,0.0190744757229677,-0.15699079776954,-0.096116983246941,-0.206123822424294,-0.18465856166117,-0.0671575615208801,-0.0965831130554068,0.057543111147863,0.0131924164437156,0.0161298953717646,-0.0181143272537299],"text":["Treatment:   0<br />Value.Norm: -9.922159e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm: -1.320486e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm:  3.830879e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm: -1.267870e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm: -8.163727e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm: -1.953912e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm: -1.953912e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm: -8.163727e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm: -1.267870e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm:  3.830879e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm: -1.320486e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   0<br />Value.Norm: -9.922159e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   0<br />Value.Norm: -9.922159e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(117,112,179,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(117,112,179,0.2)","hoveron":"points","name":"gopAga","legendgroup":"gopAga","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0118262453258184,0.040222711921955,0.00887189128528765,0.102452964332612,0.360026333822692,0.351241517849962,0.388000016189323,0.40871818122551,0.194358946296857,0.0663807149177855,0.0985584223273608,0.0109284366739327,-0.0118262453258184],"text":["Treatment:   0<br />Value.Norm: -4.489043e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm:  6.939057e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm:  3.762630e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm:  1.484060e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm:  3.843723e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm:  3.696208e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm:  3.696208e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm:  3.843723e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm:  1.484060e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm:  3.762630e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm:  6.939057e-02<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   0<br />Value.Norm: -4.489043e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   0<br />Value.Norm: -4.489043e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(117,112,179,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(117,112,179,0.2)","hoveron":"points","name":"gopAga","legendgroup":"gopAga","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0138675434955672,-0.149623198669129,-0.183024789423046,-0.212165289656451,-0.515024225456725,-0.732093584540429,-0.715565282727135,-0.492029055668993,-0.172909956474404,-0.148997422983314,-0.130741614585143,0.0126346620776442,-0.0138675434955672],"text":["Treatment:   0<br />Value.Norm: -6.164407e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm: -1.401824e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm: -1.660111e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm: -1.925376e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm: -5.035266e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm: -7.238294e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment: 100<br />Value.Norm: -7.238294e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  75<br />Value.Norm: -5.035266e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  50<br />Value.Norm: -1.925376e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:  25<br />Value.Norm: -1.660111e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   5<br />Value.Norm: -1.401824e-01<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   0<br />Value.Norm: -6.164407e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga","Treatment:   0<br />Value.Norm: -6.164407e-04<br />sample: gopAga<br />sample: gopAga<br />sample: gopAga"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(117,112,179,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(117,112,179,0.2)","hoveron":"points","name":"gopAga","legendgroup":"gopAga","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.0419399422039165,-0.101070079622105,-0.0126532047812501,-0.0253415962963459,-0.244104053211487,-0.53689355597118,-0.515578528751728,-0.23200207064385,0.0192412582496928,0.00875957251121588,-0.0897095244909556,0.0324025149978633,-0.0419399422039165],"text":["Treatment:   0<br />Value.Norm: -4.768714e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm: -9.538980e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm: -1.946816e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm: -3.050169e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm: -2.380531e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm: -5.262360e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm: -5.262360e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm: -2.380531e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm: -3.050169e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm: -1.946816e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm: -9.538980e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   0<br />Value.Norm: -4.768714e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   0<br />Value.Norm: -4.768714e-03<br />sample: homAre<br />sample: homAre<br />sample: homAre"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(231,41,138,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(231,41,138,0.2)","hoveron":"points","name":"homAre","legendgroup":"homAre","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,75,50,25,5,0,0],"y":[-0.00832858002478606,0.0545466816045367,0.0396414456984081,0.206398714229694,0.40171656376374,0.390666901650992,0.412125814898215,0.423735412647075,0.262057219558933,0.0534654881921047,0.122252288475056,0.00787657800431368,-0.00832858002478606],"text":["Treatment:   0<br />Value.Norm: -2.260010e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm:  8.839949e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm:  4.655347e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm:  2.342280e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm:  4.127260e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm:  4.013964e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm:  4.013964e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm:  4.127260e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm:  2.342280e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm:  4.655347e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm:  8.839949e-02<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   0<br />Value.Norm: -2.260010e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   0<br />Value.Norm: -2.260010e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(231,41,138,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(231,41,138,0.2)","hoveron":"points","name":"homAre","legendgroup":"homAre","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[0,5,25,50,75,100,100,100,75,50,25,5,0,0],"y":[-0.0141558510337353,-0.194148518697645,-0.173565916896471,-0.316821992424532,-0.54273091326019,-0.596931956817931,-0.596931956817931,-0.588904043816443,-0.533847463036706,-0.307978900385891,-0.158391192690221,-0.152415549066431,0.0128884745181582,-0.0141558510337353],"text":["Treatment:   0<br />Value.Norm: -6.336883e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm: -1.732820e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm: -1.659786e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm: -3.124004e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm: -5.382892e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm: -5.929180e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm: -5.929180e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment: 100<br />Value.Norm: -5.929180e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  75<br />Value.Norm: -5.382892e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  50<br />Value.Norm: -3.124004e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:  25<br />Value.Norm: -1.659786e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   5<br />Value.Norm: -1.732820e-01<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   0<br />Value.Norm: -6.336883e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre","Treatment:   0<br />Value.Norm: -6.336883e-04<br />sample: homAre<br />sample: homAre<br />sample: homAre"],"type":"scatter","mode":"lines","line":{"width":1.13385826771654,"color":"rgba(231,41,138,0.2)","dash":"solid"},"fill":"toself","fillcolor":"rgba(231,41,138,0.2)","hoveron":"points","name":"homAre","legendgroup":"homAre","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":54.2565379825654,"r":20.7222914072229,"b":37.3001245330013,"l":43.0386052303861},"plot_bgcolor":"rgba(255,255,255,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":15.9402241594022},"title":{"text":"Tortoise ApoTox-Glo Tunicamycin Tx: 72 hours","font":{"color":"rgba(0,0,0,1)","family":"","size":14.346201743462},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-5,105],"tickmode":"array","ticktext":["0","25","50","75","100"],"tickvals":[0,25,50,75,100],"categoryorder":"array","categoryarray":["0","25","50","75","100"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.98505603985056,"tickwidth":0.724555643609193,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":10.2017434620174},"tickangle":-45,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(255,255,255,1)","gridwidth":0.724555643609193,"zeroline":false,"anchor":"y3","title":"","hoverformat":".2f"},"annotations":[{"text":"tunicamycin (uM)","x":0.5,"y":-0.0157534246575343,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.9551681195517},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"top","annotationType":"axis"},{"text":"RLU/RFU (log10)","x":-0.0162337662337662,"y":0.5,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.9551681195517},"xref":"paper","yref":"paper","textangle":-90,"xanchor":"right","yanchor":"center","annotationType":"axis"},{"text":"Apoptosis","x":1,"y":0.836446658364467,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":12.7521793275218},"xref":"paper","yref":"paper","textangle":90,"xanchor":"left","yanchor":"middle"},{"text":"Cytotoxicity","x":1,"y":0.5,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":12.7521793275218},"xref":"paper","yref":"paper","textangle":90,"xanchor":"left","yanchor":"middle"},{"text":"Viability","x":1,"y":0.163553341635533,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":12.7521793275218},"xref":"paper","yref":"paper","textangle":90,"xanchor":"left","yanchor":"middle"},{"text":"Cell Line","x":1.02,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.9551681195517},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"left","yanchor":"bottom","legendTitle":true}],"yaxis":{"domain":[0.672893316728933,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.577883133054002,0.323887562768083],"tickmode":"array","ticktext":["0.3","0.5","1.0"],"tickvals":[-0.522878745280338,-0.301029995663981,0],"categoryorder":"array","categoryarray":["0.3","0.5","1.0"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.98505603985056,"tickwidth":0.724555643609193,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":12.7521793275218},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(190,190,190,1)","gridwidth":0.724555643609193,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0.672893316728933,"y1":1},{"type":"rect","fillcolor":"rgba(217,217,217,1)","line":{"color":"transparent","width":0.724555643609193,"linetype":"solid"},"yref":"paper","xref":"paper","y0":0.672893316728933,"y1":1,"x0":0,"x1":25.5043586550436,"xanchor":1,"xsizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0.3395599833956,"y1":0.6604400166044},{"type":"rect","fillcolor":"rgba(217,217,217,1)","line":{"color":"transparent","width":0.724555643609193,"linetype":"solid"},"yref":"paper","xref":"paper","y0":0.3395599833956,"y1":0.6604400166044,"x0":0,"x1":25.5043586550436,"xanchor":1,"xsizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":0.327106683271067},{"type":"rect","fillcolor":"rgba(217,217,217,1)","line":{"color":"transparent","width":0.724555643609193,"linetype":"solid"},"yref":"paper","xref":"paper","y0":0,"y1":0.327106683271067,"x0":0,"x1":25.5043586550436,"xanchor":1,"xsizemode":"pixel"}],"yaxis2":{"type":"linear","autorange":false,"range":[-0.0999230006136279,0.539041705189721],"tickmode":"array","ticktext":["1","2","3"],"tickvals":[0,0.301029995663981,0.477121254719662],"categoryorder":"array","categoryarray":["1","2","3"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.98505603985056,"tickwidth":0.724555643609193,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":12.7521793275218},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.3395599833956,0.6604400166044],"gridcolor":"rgba(190,190,190,1)","gridwidth":0.724555643609193,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"yaxis3":{"type":"linear","autorange":false,"range":[-0.982506120172443,0.0653679040101352],"tickmode":"array","ticktext":["0.3","0.5","1.0"],"tickvals":[-0.522878745280338,-0.301029995663981,0],"categoryorder":"array","categoryarray":["0.3","0.5","1.0"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.98505603985056,"tickwidth":0.724555643609193,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":12.7521793275218},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0,0.327106683271067],"gridcolor":"rgba(190,190,190,1)","gridwidth":0.724555643609193,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"showlegend":true,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":2.06156048675734,"font":{"color":"rgba(0,0,0,1)","family":"","size":12.7521793275218},"y":0.973425196850394},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","showSendToCloud":false},"source":"A","attrs":{"ccd447755a39":{"yintercept":{},"type":"scatter"},"ccd43da42696":{"x":{},"y":{},"colour":{},"fill":{}},"ccd47104205a":{"x":{},"y":{},"colour":{},"fill":{}}},"cur_data":"ccd447755a39","visdat":{"ccd447755a39":["function (y) ","x"],"ccd43da42696":["function (y) ","x"],"ccd47104205a":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.5.2 (2018-12-20)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 17134)
+
+Matrix products: default
+
+locale:
+[1] LC_COLLATE=English_United States.1252 
+[2] LC_CTYPE=English_United States.1252   
+[3] LC_MONETARY=English_United States.1252
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.1252    
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] rlang_0.3.4        RColorBrewer_1.1-2 reshape2_1.4.3    
+ [4] ggpubr_0.2         magrittr_1.5       forcats_0.4.0     
+ [7] stringr_1.4.0      dplyr_0.8.0.1      purrr_0.3.2       
+[10] readr_1.3.1        tidyr_0.8.3        tibble_2.1.1      
+[13] ggplot2_3.1.1      tidyverse_1.2.1   
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_0.2.5  xfun_0.6          haven_2.1.0      
+ [4] lattice_0.20-38   colorspace_1.4-1  generics_0.0.2   
+ [7] viridisLite_0.3.0 htmltools_0.3.6   yaml_2.2.0       
+[10] plotly_4.9.0      later_0.8.0       pillar_1.3.1     
+[13] glue_1.3.1        withr_2.1.2       modelr_0.1.4     
+[16] readxl_1.3.1      plyr_1.8.4        munsell_0.5.0    
+[19] gtable_0.3.0      workflowr_1.3.0   cellranger_1.1.0 
+[22] rvest_0.3.3       htmlwidgets_1.3   evaluate_0.13    
+[25] labeling_0.3      knitr_1.22        httpuv_1.5.1     
+[28] crosstalk_1.0.0   broom_0.5.2       Rcpp_1.0.1       
+[31] xtable_1.8-4      promises_1.0.1    scales_1.0.0     
+[34] backports_1.1.4   jsonlite_1.6      mime_0.6         
+[37] fs_1.3.0          hms_0.4.2         digest_0.6.18    
+[40] stringi_1.4.3     shiny_1.3.2       grid_3.5.2       
+[43] rprojroot_1.3-2   cli_1.1.0         tools_3.5.2      
+[46] lazyeval_0.2.2    crayon_1.3.4      whisker_0.3-2    
+[49] pkgconfig_2.0.2   data.table_1.12.2 xml2_1.2.0       
+[52] lubridate_1.7.4   assertthat_0.2.1  rmarkdown_1.12   
+[55] httr_1.4.0        rstudioapi_0.10   R6_2.4.0         
+[58] nlme_3.1-137      git2r_0.25.2      compiler_3.5.2   </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
