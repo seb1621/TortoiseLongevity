@@ -1,0 +1,256 @@
+---
+title: "Tortoise Paraquat"
+author: "JV"
+date: "4/26/2019"
+output: workflowr::wflow_html
+---
+## Libraries
+```{r Libraries}
+# Actively bound
+library(tidyverse)
+options(readr.num_columns = 0)
+library(lubridate)
+library(magrittr)
+library(ggpubr)
+library(reshape2)
+library(RColorBrewer)
+```
+## Functions for Data Analysis:
+
+```{r Functions}
+source("../code/general_functions.R")
+```
+
+
+## Parameters:
+```{r Parameters:}
+treatments.unique = c(0,50,500,2500)
+treatment.list = as.character(rep(treatments.unique, each=3))
+control.list = as.character(rep(0, 12))
+lookup.treatment = list(
+  "A"= treatment.list,
+  "B"= treatment.list,
+  "C"= treatment.list,
+  "D"= treatment.list,
+  "E"= treatment.list,
+  "F"= treatment.list
+)
+
+lookup.treatment.control = list(
+  "A"= control.list,
+  "B"= control.list,
+  "C"= control.list,
+  "D"= control.list,
+  "E"= control.list,
+  "F"= control.list
+  )
+
+lookup.cellline <- list(
+    "A"= rep("homAre", 12),
+    "B"= rep("gopAga", 12),
+    "C"= rep("geoPla", 12),
+    "D"= rep("cheNig", 12),
+    "E"= rep("terCar", 12),
+    "F"= rep("NoCell", 12)
+)
+
+lookup.passage <- list(
+    "A"= rep(6, 12),
+    "B"= rep(5, 12),
+    "C"= rep(6, 12),
+    "D"= rep(5, 12),
+    "E"= rep(6, 12),
+    "F"= rep(0, 12)
+)
+
+
+```
+
+## Data Loading:
+```{r Directory Hopping}
+tortoise.pqt.dir <- dir(
+  path="../data/RTG/paraquat/", 
+  full.names = T
+  ) %>% 
+  set_names(., basename(.) %>% gsub("2_RealTime-Glo_", "", .))
+tortoise.pqt.files <- tortoise.pqt.dir %>% 
+  lapply(
+    .,
+    function(x){
+      dir(
+        path = x,
+        full.names = T,
+        pattern = "Step[12]"
+      ) %>% 
+        set_names(., basename(.) %>% tools::file_path_sans_ext(.)) %>% 
+        plyr::rename(c("Step1_Fluorescence_Green_Read_1"="Necrosis", "Step2_Luminescence_1repeat_Read_1"="Apoptosis"))
+    }
+  )
+
+
+tortoise.pqt.df <- suppressWarnings(
+  tortoise.pqt.files %>% 
+    names %>% 
+    lapply(
+      .,
+      function(time, files){
+        files[[time]] %>% 
+          names %>% 
+          lapply(
+            .,
+            function(test, t, f){
+              f[[t]][[test]] %>% 
+                read_csv %>% 
+                filter(`1`!="X") %>% 
+                reshape_96_wellplate(., value_name = "Value", Time=t, Test = test, Drug = "Paraquat") %>% 
+                mutate(Value=as.numeric(Value)) %>% 
+                assign_attr_by_well(., cell_line = lookup.cellline, passage = lookup.passage, Treatment = lookup.treatment, Vehicle = lookup.treatment.control) %>%
+                normalize_by_vehicle() %>% 
+                arrange(cell_line, Treatment) %>% 
+                mutate(Timestamp = mdy_hms(Time))
+            },
+            t=time,
+            f=files
+          ) %>% 
+          bind_rows
+      },
+      files=tortoise.pqt.files
+    ) %>% bind_rows
+) %>% 
+  mutate(
+    Time.Seconds = Timestamp %>% subtract(min(Timestamp)) %>% as.numeric(., "secs"),
+    Time.Minutes = (Time.Seconds/60),
+    Time.Hours = Time.Minutes/60
+    ) %>% 
+  normalize_by_treatment_start() %>%
+  mutate(
+    Treatment = as.numeric(Treatment),
+    individual = cell_line,
+    cell_line = gsub('[[:digit:]]+', '', cell_line)
+) 
+
+tortoise.pqt.df2 <- tortoise.pqt.df%>% 
+  group_by(Treatment, Time, Test) %>% 
+  filter(cell_line=="NoCell") %>% 
+  summarize(NoCell.Value = mean(Value.Norm)) %>% 
+  ungroup %>% 
+  full_join(tortoise.pqt.df, ., by=c("Treatment", "Time", "Test")) %>% 
+  mutate(Value.Norm.1.2 = Value.Norm - NoCell.Value) %>% 
+  select(-Time.Mean) %>% 
+ normalize_by_treatment_start %>% 
+  mutate(
+    Treatment = factor(Treatment, levels= treatments.unique),
+    Treatment.label = paste(Treatment, " uM", sep="") %>% factor(., levels =  paste(treatments.unique, " uM", sep=""))
+         )
+
+```
+
+```{r Export Data}
+tortoise.pqt.df2 %>% write_csv("../output/tortoise_paraq_RTG.csv")
+```
+
+```{r Plot}
+tortoise.rtg.pqt.plot <- tortoise.pqt.df2 %>% 
+  unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x=Time.Hours, 
+      y = Value.Norm.1.2,
+      color=sample,
+      fill=sample,
+      group = sample
+      )
+    ) +
+  stat_summary(fun.y = "mean", geom="line") +
+  stat_summary(fun.data="mean_se", size=0.3, geom="ribbon", alpha=0.2)+
+  #scale_y_log10() + 
+  # geom_hline(
+  #   yintercept = 1,
+  #   col="black"
+  # ) +
+  # geom_hline(
+  #   yintercept = 1.1,
+  #   col="black",
+  #   lty="dashed"
+  # ) +
+  # geom_hline(
+  #   yintercept = 0.9,
+  #   col="black",
+  #   lty="dashed"
+  # ) +
+  facet_grid(cols=vars(Treatment.label), rows=vars(Test)) + 
+  theme_pubclean() + 
+  labs(
+    x="Time (h)",
+    y="Normalized RLU",
+    title = "Tortoises, Paraquat"
+  )
+tortoise.rtg.pqt.plot
+
+```
+
+```{r filter by hour}
+tort.pqt.hour24 <- filter(tortoise.pqt.df2, Time == "4-29-2019_8-49-32_PM")
+tort.pqt.hour48 <- filter(tortoise.pqt.df2, Time == "4-30-2019_8-44-17_PM")
+```
+
+
+```{r}
+tortoise.rtg.pqt.box24 <- tort.pqt.hour24 %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment.label), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.8))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Tortoise Paraquat Tx RealTime-Glo 24 hours"
+      )
+tortoise.rtg.pqt.box24
+```
+
+```{r}
+tortoise.rtg.pqt.box48 <- tort.pqt.hour48 %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment.label), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.8))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Tortoise Paraquat Tx RealTime-Glo 48 hours"
+      )
+tortoise.rtg.pqt.box48
+```
+
