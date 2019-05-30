@@ -1,5 +1,5 @@
 ---
-title: "peroxide Response Curves"
+title: "Peroxide Response Curves"
 subtitle: "homAre, gopAga, geoPla, cheNig"
 author: "Stephanie E Bulls"
 date: "2019-05-20"
