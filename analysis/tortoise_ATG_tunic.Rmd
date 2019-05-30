@@ -1,0 +1,205 @@
+---
+title: "Tunicamycin Response Curves"
+subtitle: homAre, gopAga, geoPla, cheNig"
+author: "Stephanie E Bulls"
+date: "2019-05-29"
+output: workflowr::wflow_html
+---
+
+## Libraries
+```{r Libraries}
+# Actively bound
+library(tidyverse)
+options(readr.num_columns = 0)
+library(magrittr)
+library(ggpubr)
+library(reshape2)
+library(RColorBrewer)
+```
+
+## Functions for Data Analysis:
+
+```{r Functions}
+source("../code/general_functions.R")
+```
+
+
+## Parameters:
+```{r Parameters:}
+treatments= c(0,5,25,50,75,100)
+treatment.list = rep(treatments,times=2)
+control.list = as.character(rep(0, 12))
+lookup.treatment = list(
+  "A"= treatment.list,
+  "B"= treatment.list,
+  "C"= treatment.list,
+  "D"= treatment.list,
+  "E"= treatment.list,
+  "F"= treatment.list,
+  "G"= treatment.list,
+  "H"= treatment.list
+)
+
+lookup.treatment.control = list(
+  "A"= control.list,
+  "B"= control.list,
+  "C"= control.list,
+  "D"= control.list,
+  "E"= control.list,
+  "F"= control.list,
+  "G"= control.list,
+  "H"= control.list
+  )
+
+lookup.cellline <- list(
+  "HA_GA_GP_CN" = list(
+    "A"= rep(c("homAre","geoPla"), each=6),
+    "B"=rep(c("homAre","geoPla"), each=6),
+    "C"= rep(c("homAre","geoPla"), each=6),
+    "D"=rep(c("homAre","geoPla"), each=6),
+    "E"=rep(c("gopAga","cheNig"), each=6),
+    "F"= rep(c("gopAga","cheNig"), each=6),
+    "G"= rep(c("gopAga","cheNig"), each=6),
+    "H"= rep(c("gopAga","cheNig"), each=6)
+  )
+)
+lookup.passage <- list(
+  "HA_GA_GP_CN" = list(
+    "A"= rep(c(11, 10), each = 6),
+    "B"= rep(c(11, 10), each = 6),
+    "C"= rep(c(11, 10), each = 6),
+    "D"= rep(c(11, 10), each = 6),
+    "E"= rep(11, 12),
+    "F"= rep(11, 12),
+    "G"= rep(11, 12),
+    "H"= rep(11, 12)
+  )
+)
+
+```
+
+## Data Loading:
+```{r Directory Hopping}
+tort.tunic.time <- dir(
+  path="../data/ATG/tunicamycin", 
+  full.names = T,
+  pattern = "(6|12|24|48|72)h"
+) %>% 
+  set_names(.,basename(.))
+
+tort.tunic.time.plates <- tort.tunic.time %>% 
+  lapply(
+    .,
+    function(x){
+      x %>% 
+        dir(path=., full.names = T) %>%
+        setNames(., basename(.))
+    })
+
+tort.tunic.files <- tort.tunic.time.plates %>% 
+  lapply(
+    .,
+    function(time){
+      time %>% 
+        lapply(
+          .,
+          function(plate){
+            plate %>% 
+              list.files(path=., pattern="Step[126].*.csv", full.names=T)
+          }
+        )
+    })
+
+tort.tunic.df <- suppressWarnings(
+  tort.tunic.files %>% 
+  lapply(
+    names(.),
+    function(time, btf){
+      lapply(
+        names(btf[[time]]),
+        function(plate, t, files){
+          a = list(
+            Viability=read_csv(files[[plate]][[1]],col_names = TRUE),
+            Cytotoxicity=read_csv(files[[plate]][[2]],col_names = TRUE),
+            Apoptosis=read_csv(files[[plate]][[3]],col_names = TRUE)
+          ) 
+          lapply(
+              names(a),
+              function(test, df, timepoint, p){
+                df[[test]] %>%
+                  reshape_96_wellplate(., value_name = "Value", Time=timepoint, Test = test, Drug="tunicamycin") %>%
+                  assign_attr_by_well(., cell_line = lookup.cellline[[plate]], passage = lookup.passage[[plate]], Treatment = lookup.treatment, Vehicle = lookup.treatment.control) %>%
+                  normalize_by_vehicle() %>%
+                  arrange(cell_line, Treatment)
+              },
+              df = a,
+              timepoint = t,
+              p = plate
+            ) %>%
+            bind_rows()
+          },
+          t=time,
+          files=btf[[time]]
+        ) %>% bind_rows()
+    },
+    btf = .
+  ) %>% bind_rows
+ ) %>% 
+  mutate(
+    Treatment = factor(Treatment, levels=treatments),
+    individual = cell_line,
+    cell_line = gsub('[[:digit:]]+', '', cell_line)
+    )
+
+tort.tunic.df %>% pull(cell_line) %>% unique
+
+
+tort.tunic.full <- tort.tunic.df
+#tort.tunic.full
+```
+```{r Write final results}
+dir.create("../output/tunicamycin", showWarnings = F)
+tort.tunic.full %>% write_tsv(.,"../output/tunicamycin/tort.ATG.tunicamycin.tsv")
+```
+
+## Plot
+```{r, fig.align="center", message=F, warning=F, error=F}
+species <- tort.tunic.full %>% pull(cell_line) %>% unique
+species.passage <- tort.tunic.full %>% unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% pull(sample) %>% unique
+individual <- tort.tunic.df %>% pull(individual) %>% unique
+individual.passage <- tort.tunic.df %>% unite("sample", c("individual", "passage"), sep=", P", remove = F) %>% pull(sample) %>% unique
+
+species.colorScheme <- brewer.pal(length(species), "Dark2")
+#species.colorScheme
+species.colorScheme <- set_names(species.colorScheme, species)
+
+species.passage.colorScheme <- colorRampPalette(species.colorScheme)(length(species.passage))
+species.passage.colorScheme <- set_names(species.passage.colorScheme, species.passage)
+
+individual.colorScheme <- colorRampPalette(species.colorScheme)(length(individual)) %>% 
+  set_names(., individual)
+individual.passage.colorScheme <- colorRampPalette(species.colorScheme)(length(individual.passage)) %>% 
+  set_names(., individual.passage)
+```
+
+
+```{r, fig.align="center", message=F, warning=F, error=F}
+fig6a <- tort.tunic.full %>%
+  #unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+  plot_ATG_curves(colorscheme = species.colorScheme) %>% 
+  make_pretty_graph()+
+  labs(
+    title = "Tortoise ApoTox-Glo Tunicamycin Tx: 72 hours"
+  )
+fig6a # + scale_x_log10()
+```
+
+
+
+
+
+```{r}
+plotly::ggplotly(fig6a)
+```
+
