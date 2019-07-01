@@ -1,0 +1,207 @@
+---
+title: "Etoposide Response Curve"
+author: "Stephanie Bulls"
+date: "2019-06-08"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: inline
+---
+
+## Introduction
+ApoToxGlo for etoposide response of four tortoise cell lines after 72 hours of continuos treatment. Treatment labeled "15000" is a 10000 uM treatment of etoposide with ZVF.
+
+## Libraries
+```{r Libraries}
+# Actively bound
+library(tidyverse)
+options(readr.num_columns = 0)
+library(magrittr)
+library(ggpubr)
+library(reshape2)
+library(RColorBrewer)
+```
+
+## Functions for Data Analysis:
+
+```{r Functions}
+source("../code/general_functions.R")
+```
+
+
+## Parameters:
+```{r Parameters:}
+treatments= c(0,500,1000,5000,10000, 15000)
+treatment.list = rep(treatments,times=2)
+control.list = as.character(rep(0, 12))
+lookup.treatment = list(
+  "A"= treatment.list,
+  "B"= treatment.list,
+  "C"= treatment.list,
+  "D"= treatment.list,
+  "E"= treatment.list,
+  "F"= treatment.list,
+  "G"= treatment.list,
+  "H"= treatment.list
+)
+
+lookup.treatment.control = list(
+  "A"= control.list,
+  "B"= control.list,
+  "C"= control.list,
+  "D"= control.list,
+  "E"= control.list,
+  "F"= control.list,
+  "G"= control.list,
+  "H"= control.list
+  )
+
+lookup.cellline <- list(
+  "HA_GA_GP_CN" = list(
+    "A"= rep(c("homAre","geoPla"), each=6),
+    "B"=rep(c("homAre","geoPla"), each=6),
+    "C"= rep(c("homAre","geoPla"), each=6),
+    "D"=rep(c("homAre","geoPla"), each=6),
+    "E"=rep(c("gopAga","cheNig"), each=6),
+    "F"= rep(c("gopAga","cheNig"), each=6),
+    "G"= rep(c("gopAga","cheNig"), each=6),
+    "H"= rep(c("gopAga","cheNig"), each=6)
+  )
+)
+lookup.passage <- list(
+  "HA_GA_GP_CN" = list(
+    "A"= rep(c(12, 11), each = 6),
+    "B"= rep(c(12, 11), each = 6),
+    "C"= rep(c(12, 11), each = 6),
+    "D"= rep(c(12, 11), each = 6),
+    "E"= rep(c(12, 13), each = 6),
+    "F"= rep(c(12, 13), each = 6),
+    "G"= rep(c(12, 13), each = 6),
+    "H"= rep(c(12, 13), each = 6)
+  )
+)
+
+```
+
+## Data Loading:
+```{r Directory Hopping}
+tort.etop.time <- dir(
+  path="../data/ATG/etoposide", 
+  full.names = T,
+  pattern = "(6|12|24|48|72)h"
+) %>% 
+  set_names(.,basename(.))
+
+tort.etop.time.plates <- tort.etop.time %>% 
+  lapply(
+    .,
+    function(x){
+      x %>% 
+        dir(path=., full.names = T) %>%
+        setNames(., basename(.))
+    })
+
+tort.etop.files <- tort.etop.time.plates %>% 
+  lapply(
+    .,
+    function(time){
+      time %>% 
+        lapply(
+          .,
+          function(plate){
+            plate %>% 
+              list.files(path=., pattern="Step[126].*.csv", full.names=T)
+          }
+        )
+    })
+
+tort.etop.df <- suppressWarnings(
+  tort.etop.files %>% 
+  lapply(
+    names(.),
+    function(time, btf){
+      lapply(
+        names(btf[[time]]),
+        function(plate, t, files){
+          a = list(
+            Viability=read_csv(files[[plate]][[1]],col_names = TRUE),
+            Cytotoxicity=read_csv(files[[plate]][[2]],col_names = TRUE),
+            Apoptosis=read_csv(files[[plate]][[3]],col_names = TRUE)
+          ) 
+          lapply(
+              names(a),
+              function(test, df, timepoint, p){
+                df[[test]] %>%
+                  reshape_96_wellplate(., value_name = "Value", Time=timepoint, Test = test, Drug="Etoposide") %>%
+                  assign_attr_by_well(., cell_line = lookup.cellline[[plate]], passage = lookup.passage[[plate]], Treatment = lookup.treatment, Vehicle = lookup.treatment.control) %>%
+                  normalize_by_vehicle() %>%
+                  arrange(cell_line, Treatment)
+              },
+              df = a,
+              timepoint = t,
+              p = plate
+            ) %>%
+            bind_rows()
+          },
+          t=time,
+          files=btf[[time]]
+        ) %>% bind_rows()
+    },
+    btf = .
+  ) %>% bind_rows
+ ) %>% 
+  mutate(
+    Treatment = factor(Treatment, levels=treatments),
+    individual = cell_line,
+    cell_line = gsub('[[:digit:]]+', '', cell_line)
+    )
+
+tort.etop.df %>% pull(cell_line) %>% unique
+
+
+tort.etop.full <- tort.etop.df
+
+
+```
+
+
+```{r Write final results}
+dir.create("../output/etoposide", showWarnings = F)
+tort.etop.full %>% write_tsv(.,"../output/etoposide/tort.ATG.etoposide.tsv")
+```
+
+## Plot
+```{r, fig.align="center", message=F, warning=F, error=F}
+species <- tort.etop.full %>% pull(cell_line) %>% unique
+species.passage <- tort.etop.full %>% unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% pull(sample) %>% unique
+individual <- tort.etop.df %>% pull(individual) %>% unique
+individual.passage <- tort.etop.df %>% unite("sample", c("individual", "passage"), sep=", P", remove = F) %>% pull(sample) %>% unique
+
+species.colorScheme <- brewer.pal(length(species), "Dark2")
+#species.colorScheme
+species.colorScheme <- set_names(species.colorScheme, species)
+
+species.passage.colorScheme <- colorRampPalette(species.colorScheme)(length(species.passage))
+species.passage.colorScheme <- set_names(species.passage.colorScheme, species.passage)
+
+individual.colorScheme <- colorRampPalette(species.colorScheme)(length(individual)) %>% 
+  set_names(., individual)
+individual.passage.colorScheme <- colorRampPalette(species.colorScheme)(length(individual.passage)) %>% 
+  set_names(., individual.passage)
+```
+
+
+```{r, fig.align="center", message=F, warning=F, error=F}
+fig.etop <- tort.etop.full %>%
+  #geoPla data especially in Cytotoxicity assay was saturated and caused other cell line values to not be visualized so was removed from this test only
+  filter(Treatment != 'Cytotoxicity' & cell_line != "geoPla") %>% 
+  #unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+  plot_ATG_curves(colorscheme = species.colorScheme) %>% 
+  make_pretty_graph()+
+  labs(
+    title = "Tortoise ApoTox-Glo Etoposide Tx: 72 hours"
+  )
+fig.etop # + scale_x_log10()
+
+
+```
