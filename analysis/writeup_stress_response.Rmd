@@ -1,0 +1,604 @@
+---
+title: "Testudine Cell Stress Response Analysis"
+author: "Stephanie E Bulls"
+date: 
+output:
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+# Actively bound
+library(tidyverse)
+options(readr.num_columns = 0)
+library(lubridate)
+library(magrittr)
+library(ggpubr)
+library(reshape2)
+library(RColorBrewer)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+source("../code/general_functions.R")
+```
+
+## Purpose
+
+Preliminary investigation of Testudine cell response to DNA damaging reagents:
+
+-Hydrogen Peroxide: Reactive oxygen species (ROS) causes DNA single strand breaks; not metabolically driven; accumulation of single strand breaks causes apoptosis
+
+-Etoposide: Topoisomerase II inhibitor causes cell proliferation to stop, DNA fragmentation, and eventual cell death through apoptosis; requires replicating cells and protein formation
+
+-Tunicamycin: causes endoplasmic reticulum stress due to unfolded/misfolded proteins accumulating in ER, when ER stress is severe or sustained apoptotic cell death occurs; requires protein formation
+
+-Paraquat: reduction of Paraquat in cytosol produces ROS species, oxidative stress, and S-phase cell cycle arrest inducing apoptotic cell death
+
+## Cell Lines
+
+All cells are primary, epithelial fibroblasts grown in Minimum Eagle's Medium (MEM) with added 10% fetal bovine serum (FBS) and 1% penicillin- streptomycin antibotic mixture. Cells were incubated at 25C with 5% CO~2~ provided. Media changes occurred every three days and cell passaging approximately every 7-10 days. Homopus areolatus and Gopherus agassizii were the slowest growing while Chelonoides nigra and Terrapene carolina were the fastest growing as well as typically the highest viability counts on passaging, though all lines typically retained >90% viability numbers. 
+
+```{r cell table, echo=FALSE, fig.align='center', fig.cap='**Table 1: Cell line species**'}
+species.table <- tibble::tribble(
+                         ~Scientific.Name,             ~Common.Name, ~Code.Name,        ~Family, ~Biopsy.Site, ~Body.Weight.Kg, ~Life.Span.max,
+                      "Homopus areolatus", "Parrot-beaked tortoise",   "homAre", "Testudinidae",        "eye",               0.3,               28,
+                     "Gopherus agassizii",        "Desert tortoise",   "gopAga", "Testudinidae",    "trachea",                 5,             62.8,
+                   "Geochelone platynota",  "Burmese star tortoise",   "geoPla", "Testudinidae",    "trachea",                 7,               80,
+                      "Chelonoidis nigra",     "Galapagos tortoise",   "cheNig", "Testudinidae",    "trachea",               272,              177,
+                     "Terrapene carolina",      "Common Box Turtle",   "terCar",     "Emydidae",      "heart",               0.5,               40
+                   )
+
+
+
+
+knitr::kable(species.table)
+```
+
+
+![Phylogenetic tree produced by TimeTree to show relationship between working cell lines. Homopus areolatus is unresolved as no genome available.](turtSPlist2.png)
+
+
+
+
+## TH-1 Cell Stress Experiment
+
+The Terrapene carolina (TH-1) cell line was the first to arrive at the lab and be seeded thus was used for initial investigation to testudine cellular response to drug dosages ie. optimum dosage and time for cell death to occur. Four (one for each drug type) 6 well plates were seeded with 100,000 cells per well and allowed to settle for 24 hours. Original media was aspirated off and replaced with MEM treated with respective drug dosage: two replicates each of a control consisting of DMSO or PBS, a low dose, and a high dose. For the first round of drug treatments the low dose = 10 uM and the high dose = 100 uM for all four drugs. These doses are comparable to the treatments used in the bat/mammalian experiments. Plates were then observed under microscope at 6, 12, 24, and 48 hours for subjective analysis of cell viability: dead/dying cells lose their fibroblast shape, become rounded or lyse, and eventually detach from the plate. Percentage values used for analysis equals the estimated area of well coverage by live cells.
+
+After 48 hours little to no cell death had occurred in any of the drug treated cells. Although cells treated with the high dose of tunicamycin were beginning to show signs of cell death. At 72 hours the media was exchanged with higher drug treatments. Tunicamycin was not re-treated as cells were dying: at 72 hours there was approximately 50% coverage in the low wells and 30% in the high wells; at 96 hours there was 20% in low and less than 5% in high. The new drug dosages for paraquat and hydrogen peroxide were 1000 uM for low dose and 5000 uM for high dose. Due to limited stores at the time, Etoposide doses were raised to 100 uM for low dose and 1000 uM for high dose. Hydrogen peroxide was the only drug that incurred a complete die-off in the time frame observed. Etoposide and paraquat both appeared to have some initial die-off with cell counts plateauing or, in the case of paraquat, increasing again after 48 hours.
+
+
+```{r results table, echo=FALSE, fig.align='center', fig.cap='**Table 2 TH-1 cell stress repsonse:** Results for second round of drug treatments. Dosages for paraquat and hydron peroxide = 1000 uM (low) and 5000 uM (high). Dose for etoposide = 100 uM (low) and 1000 uM (high). Numerical values represent estimated percentage of well coverage by live/attached cells.'}
+
+stress.results <-tibble::tribble(
+                   ~Hours.after.tx, ~Peroxide.Low, ~Peroxide.High, ~Etoposide.Low, ~Etoposide.High, ~Paraquat.Low, ~Paraquat.High,
+                                 1,            75,             60,             80,              75,            90,             85,
+                                 6,            30,              5,             65,              50,            80,             60,
+                                12,             5,              0,             65,              30,            80,             60,
+                                24,             0,              0,             65,              30,            85,             70,
+                                48,             0,              0,             75,              30,            90,             75
+                   )
+
+
+
+knitr::kable(stress.results)
+```
+
+
+```{r color scheme}
+species.colorscheme <- brewer.pal(length(species.table$Code.Name)+1, "Dark2") %>% 
+  set_names(., c(species.table$Code.Name, "NoCell"))
+```
+
+## RealTime-Glo Analysis
+
+Promega's RealTime-Glo^TM Annexin V Apoptosis and Necrosis assay (RTG) visualizes the kinetics of apoptosis and cell death caused by apoptosis. The apoptotic process exposes phosphatidylserine (PS) on the surface of the cell membrane which Annexin V binds to creating a luminescent signal. In late stage apoptosis cell membrane integrity is lost and the cell lyses allowing the second reagent, DNA-binding dye, to bind with free DNA and create a fluorescent signal. This test differentiates secondary necrosis occurring during late apoptosis from necrosis caused by other cytotoxic events. 
+
+Cells were plated in a 96 well plate. Due to lower cell concentration numbers of homAre, a dilution of 5,000 cells per well was used for all species and three replicates per treatment per species plated. Cells were left to adhere for 24 hours then seeding media was aspirated off and drug treatments applied. All drug treatments were made using Fluorobrite DMEM media. The "0 uM" control treatments consisted of the vehicle used to suspend drug (either DMSO or PBS) at the concentration matching the highest drug concentration. A background control consisting of drug treatment and assay reagents with no cells ("NoCell") was used. Per RTG product protocol a 500-fold dilution of reagents in Fluorobirte DMEM media was made and added to wells immediately after drug treatments were applied. Readings were then taken every 30 minutes for 48 hours in Promega's GloMax Luminometer.
+
+
+
+```{r Peroxide RTG, echo=FALSE, fig.align='right', fig.cap='**Fig 1 Peroxide Response RTG:** Line graph shows real time response over 48 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.'}
+
+peroxide.rtg <- read_csv("../output/tortoise_perox_RTG.csv")
+#peroxide.rtg %>% pull(individual) %>% unique
+per.rtg <- peroxide.rtg %>% 
+  mutate(sample=individual) %>% 
+  plot_RTG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+per.rtg
+
+```
+
+
+
+
+```{r Peroxide RTG Box, echo=FALSE, fig.align='right', fig.cap='**Fig 2 RTG peroxide response at single timepoint:**Box plots show cellular response at 6 and 18 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.' }
+
+tortoise.rtg.hpo.box6 <- read_csv("../output/tort_hpoBox6_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Peroxide Tx 6 hr"
+      )
+
+tortoise.rtg.hpo.box18 <- read_csv("../output/tort_hpoBox18_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Peroxide Tx 18 hr"
+      )
+
+
+ grid.arrange(tortoise.rtg.hpo.box6, tortoise.rtg.hpo.box18, ncol=2)
+
+
+
+```
+
+
+```{r Etoposide RTG, echo=FALSE, fig.align='right', fig.cap='**Fig 3 Etoposide Response RTG:** Line graph shows real time response over 48 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.'}
+
+etoposide.rtg <- read_csv("../output/tortoise_etop_RTG.csv")
+#etoposide.rtg %>% pull(individual) %>% unique
+eto.rtg <- etoposide.rtg %>% 
+  mutate(sample=individual) %>% 
+  plot_RTG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+eto.rtg
+
+```
+
+
+```{r Etoposide RTG Box, echo=FALSE, fig.align='right', fig.cap='**Fig 4 RTG etoposide response at single timepoint:**Box plots show cellular response at 24 and 48 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.' }
+
+tort.rtg.eto.box24 <- read_csv("../output/tort_etoBox24_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Etoposide Tx 24 hr"
+      )
+
+tort.rtg.eto.box48 <- read_csv("../output/tort_etoBox48_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Etoposide Tx 48 hr"
+      )
+
+
+ grid.arrange(tort.rtg.eto.box24, tort.rtg.eto.box48, ncol=2)
+
+
+
+```
+
+
+
+```{r Paraquat RTG, echo=FALSE, fig.align='right', fig.cap='**Fig 5 Paraquat Response RTG:** Line graph shows real time response over 48 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.'}
+
+paraquat.rtg <- read_csv("../output/tortoise_paraq_RTG.csv")
+#paraquat.rtg %>% pull(individual) %>% unique
+para.rtg <- paraquat.rtg %>% 
+  mutate(sample=individual) %>% 
+  plot_RTG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+para.rtg
+
+```
+
+
+```{r Paraquat RTG Box, echo=FALSE, fig.align='right', fig.cap='**Fig 6 RTG paraquat response at single timepoint:**Box plots show cellular response at 24 and 48 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.' }
+
+tort.rtg.pqt.box24 <- read_csv("../output/tort_pqtBox24_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Paraquat Tx 24 hr"
+      )
+
+tort.rtg.pqt.box48 <- read_csv("../output/tort_pqtBox48_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Paraquat Tx 48 hr"
+      )
+
+
+ grid.arrange(tort.rtg.pqt.box24, tort.rtg.pqt.box48, ncol=2)
+
+
+
+```
+
+
+
+```{r Tunicamycin RTG, echo=FALSE, fig.align='right', fig.cap='**Fig 7 Tunicamycin Response RTG:** Line graph shows real time response over 48 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.'}
+
+tunicamycin.rtg <- read_csv("../output/tortoise_tunic_RTG.csv")
+#paraquat.rtg %>% pull(individual) %>% unique
+tunic.rtg <- tunicamycin.rtg %>% 
+  mutate(sample=individual) %>% 
+  plot_RTG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+tunic.rtg
+
+```
+
+
+```{r Tunicamycin RTG Box, echo=FALSE, fig.align='right', fig.cap='**Fig 8 RTG tunicamycin response at single timepoint:**Box plots show cellular response at 24 and 48 hours. All values normalized to control then the "NoCell" background control readings subtracted from the value.' }
+
+tort.rtg.tun.box24 <- read_csv("../output/tort_tunBox24_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Tunicamycin Tx 24 hr"
+      )
+
+tort.rtg.tun.box48 <- read_csv("../output/tort_tunBox48_RTG.csv") %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  #mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      fill= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+
+    facet_grid(cols=vars(Treatment), rows=vars(Test))+
+    theme_pubclean() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,
+                                   hjust = 1,
+                                   size=rel(.5))
+  ) +
+   labs(
+      x="Sample",
+      y="Normalized RLU/RFU",
+      title= "Tunicamycin Tx 48 hr"
+      )
+
+
+ grid.arrange(tort.rtg.tun.box24, tort.rtg.tun.box48, ncol=2)
+
+
+
+```
+
+
+
+## ApoTox-Glo Analysis
+
+Promega's ApoTox-Glo Assay (ATG) asseses cell viability, cytotoxicity, and apoptosis at a single time point. Viability and cytotoxicity are measured using two different protease biomarkers. A cell-permeable substrate enters intact cells where it is cleaved generating a fluorescent signal, whereas a cell-impermeable substrate measures cytotoxicity by being cleaved by proteases released from lysed cells. Apoptosis is measured with a lumminogenic substrate that is cleaved by caspase-3/7 which is activated during apoptosis. 
+
+Due to 96 well plate layout and number of species able to fit on single plate, TH-1 was dropped from this round of ATG analysis and only tortoise species were used. Four replicates per species per drug type were analyzed. In contrast to RTG which examines a few drug doses over a peroid of time, ATG examines a wider range of drug doses at one specific time point of interest. Wells were seeded with 5,000 cells and allowed to settle for 24 hours. Seeding media was aspirated and drug treatments added. Hydrogen peroxide was read at six hours after treatment and all others were left in treatment media for 72 hours before analysis. 
+
+
+
+```{r Peroxide ATG, echo=FALSE, fig.align='right', fig.cap='**Fig 5 Peroxide Response ATG:** Line graph shows cellular response at 6 hours after treatment. All values normalized to control.'}
+
+peroxide.atg <- read_csv("../output/peroxide/tort.ATG.peroxide.csv")
+#peroxide.atg %>% pull(individual) %>% unique
+per.atg <- peroxide.atg %>% 
+  filter(Treatment!="N1000") %>% 
+   mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+   plot_ATG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+per.atg
+
+```
+
+
+```{r Etoposide ATG, echo=FALSE, fig.align='right', fig.cap='**Fig 6a Etoposide Response ATG:** Line graph shows cellular response at 72 hours after treatment. All values normalized to control. geoPla readings in the Cytotoxicity assay were saturated and caused other cell line values to not be visualized. geoPla data was removed from this graph entirely as we were having difficulty omitting just the cytotoxicity data.'}
+
+etoposide.atg <- read_csv("../output/etoposide/tort.ATG.etoposide.csv")
+#etoposide.atg %>% pull(individual) %>% unique
+eto.atg <- etoposide.atg %>% 
+   filter(Treatment != 'Cytotoxicity' & cell_line != "geoPla") %>% 
+   mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+   plot_ATG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+eto.atg
+
+```
+
+```{r Etoposide ATG 2, echo=FALSE, fig.align='right', fig.cap='**Fig 6b Etoposide Response ATG:** Line graph shows cellular response at 72 hours after treatment. All values normalized to control. geoPla readings in the Cytotoxicity assay were saturated and caused other cell line values to not be visualized. This figure retains the geoPla data so apoptosis and viability results for this species can be seen.'}
+
+etoposide2.atg <- read_csv("../output/etoposide/tort.ATG.etoposide.csv")
+#etoposide.atg %>% pull(individual) %>% unique
+eto2.atg <- etoposide.atg %>% 
+   mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+   plot_ATG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+eto2.atg
+
+```
+
+
+```{r Paraquat ATG, echo=FALSE, fig.align='right', fig.cap='**Fig 7 Paraquat Response ATG:** Line graph shows cellular response at 72 hours after treatment. All values normalized to control.'}
+
+paraquat.atg <- read_csv("../output/paraquat/tort.ATG.paraquat2.csv")
+#paraquat.atg %>% pull(individual) %>% unique
+pqt.atg <- paraquat.atg %>% 
+   mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+   plot_ATG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+pqt.atg
+
+```
+
+```{r Tunicamycin ATG, echo=FALSE, fig.align='right', fig.cap='**Fig 7 Tunicamycin Response ATG:** Line graph shows cellular response at 72 hours after treatment. All values normalized to control.'}
+
+tunicamycin.atg <- read_csv("../output/tunicamycin/tort.ATG.tunicamycin.csv")
+#tunicamycin.atg %>% pull(individual) %>% unique
+tunic.atg <- tunicamycin.atg %>% 
+   mutate(sample=cell_line, Treatment=as.character(Treatment) %>% as.numeric) %>% 
+   plot_ATG_curves(colorscheme = species.colorscheme) %>% 
+  make_pretty_graph()
+tunic.atg
+
+```
+
+
+## Assay Analysis
+
+Included is the analysis by Dr. Lynch from email:
+
+1. Peroxide 
+
+RealTime-Glo (RTG)
+– geoPla is clearly different than the other species, but not necessarily terCar, at 500uM across all time points.
+
+ApoTox-Glo (ATG)
+– The data are too dirty to interpret. Maybe the ATG chemistry is not compatible with peroxide?
+
+Conclusion
+It is difficult to know what the peroxide treatment is actually doing, yes it causes oxidative stress in cells but it also oxidizes the media so we can’t know which the cells are responding too. That said, geoPla is different than everyone else.
+
+
+2. Tunicamycin
+
+RealTime-Glo (RTG)
+– cheNig is clearly different than the other species, most noticeably at the 25um dose and early time points. By 48hrs all species have a similar induction of apoptosis. 
+
+ApoTox-Glo (ATG)
+– cheNig is clearly different than the other species. Tunicamycin induces cell death in all species of tortoises (viability graph), but the magnitude of the effect (esp at higher doses) is variable by species and greatest for Galapagos cells. All species die from necrosis (cytotoxicity), more or less similarly except for geoPla. Only Galapagos tortoise cells die by apoptosis (probably) (apoptosis graph).
+
+
+Conclusion
+cheNig is different than everyone else, they respond to treatment much faster than the other species but by 48 hours all species have responded the degree.
+
+
+3. Etoposide
+
+RealTime-Glo (RTG)
+– Here gopAga is the outlier and responds faster than the other species, the effects are most noticeable at 250 and 500uM. By 48 hours cheNig is similar, but none the other species have responded yet.
+
+ApoTox-Glo (ATG)
+
+Conclusion
+gopAga is more sensitive to etoposide than the other species.
+
+
+4. Paraquat
+
+RealTime-Glo (RTG)
+– No species likes paraquat treatment but man they can handle a lot (2500uM)! There are differences between species, but it is more complicated than the other treatments where only one (or two) species are different than the rest making it easy to know which has the derived phenotype. 
+
+ApoTox-Glo (ATG)
+
+Conclusion
+They all seem to be pretty insensitive to paraquat treatment (which induces oxidative stress so means they are resistant to Ox stress ), but there are also species specific differences.
+
+
+More analyses are needed to figure out what this is correlated with, if anything; perhaps regressing response rate (slope of the line from 0 time to endpoint of the time course data) or normalized RLU/RFU from the dose response with life history traits for each species such as lifespan, body size, metabolic rate, others??? But all of these life history traits will be correlated with each other, so we have to do a more complicated regression that includes all traits in a mixed effects linear model as fixed effects (life history traits we know about) plus a random effect (to account for other sources of correlation) to determine if one trait is more correlated than another and how predictive each is for drug response and all that using phylogenetic independent contrasts to account for these data not being independent because phylogeny! While I have done these things, it has been a really long time and would take me a while to figure out how to do so again. Anyone else remember how to do this (I’m looking at you Ylenia and Scott!)
+
+
+BIG CONCLUSIONS: 
+We have some species which are clearly different than others with respect to different treatments. Thats good because it is place to start looking for genetic changes that are responsible for those derived responses and I think highlights why looking at more than just Galapagos tortoises or some other species is important; different species (cells) have evolved to have different responses to different stressors: geoPla is more sensitive to peroxide (oxidative stress), cheNig is more sensitive to tunicamycin (ER stress), gopAga is more sensitive to etoposide (DNA breaks), and everyone responds to paraquat (also oxidative stress) differently. 
+
+
+
+## Other Tests
+
+### Transfection Optimizations
+
+First attempts at transfection used Lipofectamine LTX & Plus (Invitrogen). Lipofectamine contains lipid subunits that forms liposomes that entrap the transfection payload and carry it through cell membranes. A pmaxGFP plasmid DNA (0.5 ug/uL) was used to visualize transfection. The product optimization protocol for 96 well plates was used with varying dilutions of the Lipofectamine LTX reagent: two replicates each of a no reagent control, 1 uL, 1.5 uL, 2 uL, and 2.5 uL. Wells were seeded with 20,000 cells and allowed to adhere overnight. Transfection reagent/DNA mix added and allowed to set for 24 hours per protocol. At 24 hour observation there were small numbers of GFP tagged cells noted: homAre being the least receptive and cheNig having the most GFP cells. In all cell lines it appeared that the 2 uL Lipofectamine reagent dilution performed the best but numbers were below 30%. No increase was noted at a 48 hour observation. 
+
+![GFP tagged cheNig cells in 2 uL dilution of Lipofectamine LTX Plus](analysis/CN_Lipofection_GFP_2ul.png)
+
+Second attempts at transfection used jetPrime transfection reagent (Polyplus). Optimization protocol for jetPrime involved testing different ratios of DNA to reagent dilutions. Cells were seeded in 24 well plates at 50,000 cell dilution and allowed to incubate for 24 hours then DNA:Reagent dilutions were added, one replicate per ratio per species and a no treatment control. 
+
+```{r polyplus optimization, echo=FALSE}
+
+poly.ratio <- tibble::tribble(
+                 ~Ratio.DNA.to.Reagent, ~Number.of.wells, ~Total.DNA.ug, ~DNA.uL, ~Total.jetPrime.Reagent, ~Total.jetPrime.Buffer.uL,
+                       "0.25 : 0.5",                5,            1.25,     2.5,                     2.5,                         250,
+                      "0.25 : 0.75",                5,            1.25,     2.5,                    3.75,                         250,
+                          "0.5 : 1",                5,             2.5,       5,                       5,                         250,
+                        "0.5 : 1.5",                5,             2.5,       5,                     7.5,                         250,
+                       "0.75 : 1.5",                5,            3.75,     7.5,                     7.5,                         250,
+                      "0.75 : 2.25",                5,            3.75,     7.5,                   11.25,                         250
+                 )
+
+
+
+
+
+knitr::kable(poly.ratio)
+```
+
+Cells were allowed to incubate overnight then media was changed and Live/Dead stain added and incubated for one hour. At 24 hour observation all cells had <30% transfected cells with homAre and gopAga being the least responsive and cheNig and terCar having the highest percentages. Allowed cells to incubate for another 24 hours. At 48 hours the percentage of GFP tagged cells had increased  in all lines but 0.75:2.25 had highest dead cell to live cell ratios.
+-While homAre and gopAga still had the lowest percentages overall: both seemed best at 0.5:1 to 0.75:1.5 with about 30% transfection
+-geoPla had slightly higher percentage around 45% and favored 0.5:1 to 0.5:1.5 dilutions
+-cheNig did overall better in each ratio than homAre or gopAga, though apeared to do best in 0.25:0.75 with about 50% transfection
+-terCar was better in every ratio than any of the other cell lines and also seemed to be proliferating more than the other lines. Markedly better in all ratios above 0.5:1 though still higher dead count in 0.75:2.25 than in other ratios. 
+
+Due to lower metabolism of homAre and gopAga at the 25C incubation temperature they may need more time for transfection. The cell lines appearedd to favor slightly different ratios but if looking for an across the board DNA:Reagent ratio to use 0.5:1 would be a median compromise. 
+
+![GFP tagged cheNig cells in 0.25 DNA : 0.75 jetPrime Reagent](CheNig2.png)
+
+![GFP tagged terCar cells in 0.5 DNA : 1.5 jetPrime Reagent](TerCar2.png)
+
+
+### Western Blot chrPic
+
+Painted turtle, Chrysemys picta (chrPic), cells were used to test Western Blotting on testudine cells. About 750,000 cells were prepared in RIPA and Lamellii Buffer and boiled at 95C for 1 hour. A 4-20% stain free gel plate was used for electrophoresis and three replicates of chrPic protein along with Kelaidescope and Dual Color Ladders were loaded in to gel. Electrophoresis was run at 120v for 30 mins. After electrophoresis, proteins were transferred to an immun-blot PVDF membrane uses a BioRad TransBlot Turbo. Membrane was rinsed with TBST and treated with Rabbit monoclonal antibodies to beta Actin (abcam ab213262). Results were positive with strong, bright bands between 40-50 kDa (beta Actin = 42 kDa) with some heavy smearing. There may have been too much protein in the samples loaded,retesting with dilutions of the protein sample are needed.
+
+![Western Blot of chrPic for presence of beta Actin](chrPicBlot.png)
+
+
+### NEIL1 Investigation
+
+NEIL1 had been targeted as a gene of interest due to replication in the genome of Chelonoidis abingdonii and Aldabrachelys gigantea. NEIL1 targets and removes ROS-damaged bases from single-stranded DNA as well as from bubble and forked DNA structures. The expression of NEIL1 is cell-cycle dependent and may function in replication associated DNA repair. 
+
+The Chrysemys picta genome was BLATed against human NEIL1 sequence and found to also contain replications. The chrPic NEIL1 sequence was used to BLAST against testudines genomes available in NCBI database. Additionally, de novo sequences were generated using RNAseq data available on NCBI for testudines species whose genomes are not available (work still in progess) and then BLASTed against chrPic NEIL1 using Galaxy. Gathered NEIL1 sequences were aligned in Geneious Prime and a phylogenetic tree (Fig 18) generated to show relation between the different NEIL1 species and replications. 
+
+Several other testudines species appear to have replications of NEIL1, not just those that are large and long lived, such as Chrysemys picta (2), Gopherus agassizii (3) and Malaclemys terrapin(2) though they may be truncated with stop codons/ pseudogenes. More genomic investigation is necessary to finish investigating species and specific replications of NEIL1. 
+
+
+
+![Fig 18: PHYML Phylogenetic tree of NEIL1 protein amino acid sequences found in Testudines](NEIL1Protein alignment PhyML Tree.jpg)
