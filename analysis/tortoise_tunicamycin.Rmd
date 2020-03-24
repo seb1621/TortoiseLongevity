@@ -1,8 +1,10 @@
 ---
-title: "Tortoise Tunicamycin"
-author: "JV"
+title: "Tortoise RTG Tunicamycin"
+author: "JV & SEB"
 date: "4/26/2019"
 output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
 ---
 ## Libraries
 ```{r Libraries}
@@ -15,6 +17,7 @@ library(ggpubr)
 library(reshape2)
 library(RColorBrewer)
 library(dplyr)
+library(grid)
 ```
 ## Functions for Data Analysis:
 
@@ -47,11 +50,11 @@ lookup.treatment.control = list(
   )
 
 lookup.cellline <- list(
-    "A"= rep("homAre", 12),
-    "B"= rep("gopAga", 12),
-    "C"= rep("geoPla", 12),
-    "D"= rep("cheNig", 12),
-    "E"= rep("terCar", 12),
+    "A"= rep("Homopus areolatus", 12),
+    "B"= rep("Gopherus agassizii", 12),
+    "C"= rep("Geochelone platynota", 12),
+    "D"= rep("Chelonoidis nigra", 12),
+    "E"= rep("Terrapene carolina", 12),
     "F"= rep("NoCell", 12)
 )
 
@@ -200,11 +203,55 @@ tortoise.rtg.tun.plot
 
 ```{r filter by hour}
 tort.tun.hour24 <- filter(tortoise.tun.df2, Time == "4-29-2019_8-41-23_PM")
+tort.tun.hour24 %>% write_csv("../output/tort_tunBox24_RTG.csv")
 tort.tun.hour48 <- filter(tortoise.tun.df2, Time == "4-30-2019_8-38-55_PM")
+tort.tun.hour48 %>% write_csv("../output/tort_tunBox48_RTG.csv")
+
 
 ```
 
+```{r extract treatment 0 and 500 at 5 hours}
+target25 <- c("0", "25")
+tort.tun.hour5 <- filter(tortoise.tun.df2, Time == "4-29-2019_1-54-26_AM")
+tort.tun.hour5 %>% write_csv("../output/tort_tunbox5_RTG.csv")
+tort.tun.treat25 <- filter(tort.tun.hour5, Treatment %in% target25)
+tort.tun.treat25 %>% write_csv("../output/tort_tunBox25_RTG.csv")
+```
 
+```{r Box Plot hour 5 treat 25}
+tort.tun.box25 <- tort.tun.treat25 %>% 
+ unite("sample", c("cell_line", "passage"), sep=", P", remove = F) %>% 
+  mutate(Treatment = paste(Treatment, " uM", sep="")) %>% 
+  ggplot(
+    aes(
+      x = cell_line,
+      y= Value.Norm.1.2,
+      color= sample,
+      group= sample
+    )
+  )+
+  geom_boxplot()+ geom_jitter() +
+    facet_grid(cols=vars(Treatment.label), rows=vars(Test), scales = "free_y")+
+  theme_pubclean() +
+  theme(
+    axis.text.x = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_blank()
+  ) +
+   labs(
+     x= "Cell Line",
+      y="Relative Fluorescence/Luminescence Units (log)",
+      title= "Tunicamycin RealTime-Glo at 5 hours"
+      )
+
+tort.tun.box25
+
+```
+
+```{r box plot base R graphics}
+
+
+```
 
 ```{r Box Plot}
 tortoise.rtg.tun.box24 <- tort.tun.hour24 %>% 
